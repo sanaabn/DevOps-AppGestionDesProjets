@@ -1,0 +1,59 @@
+
+services:
+  db:
+    image: mysql:8.4
+    container_name: appgestion-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: test_db
+      MYSQL_USER: backend_user
+      MYSQL_PASSWORD: DevOpsLab2026!
+      MYSQL_ROOT_PASSWORD: RootLab2026!
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: sanou/backend-appgestion:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: appgestion-backend
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://db:3306/test_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: backend_user
+      SPRING_DATASOURCE_PASSWORD: DevOpsLab2026!
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  frontend:
+    image: sanou/frontend-appgestion:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: appgestion-frontend
+    restart: always
+    ports:
+      - "8088:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  mysql_data:
+
+networks:
+  app-network:
+    driver: bridge
+
