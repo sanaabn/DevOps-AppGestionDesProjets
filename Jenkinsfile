@@ -22,13 +22,13 @@ pipeline {
 
         stage('Verify Environment') {
             steps {
-                echo 'Verification des outils'
+                echo 'Verification des outils installes'
                 sh '''
                     java -version
                     javac -version
-                    mvn -version
-                    node -version
-                    npm -version
+                    mvn --version
+                    node --version
+                    npm --version
                 '''
             }
         }
