@@ -6,7 +6,6 @@ pipeline {
         JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64'
         PATH = "${JAVA_HOME}/bin:${env.PATH}"
 
-        // Conserver le meme projet Docker Compose
         COMPOSE_PROJECT_NAME = 'devops-appgestiondesprojets'
     }
 
@@ -14,7 +13,6 @@ pipeline {
         timestamps()
     }
 
-    // Vérifier automatiquement les changements sur GitHub
     triggers {
         pollSCM('H/2 * * * *')
     }
@@ -31,6 +29,7 @@ pipeline {
         stage('Verify Environment') {
             steps {
                 echo 'Verification des outils installes'
+
                 sh '''
                     java -version
                     javac -version
@@ -81,7 +80,7 @@ pipeline {
                 echo 'Construction des images Docker'
 
                 sh '''
-                    docker compose build
+                    docker compose build backend frontend
                 '''
             }
         }
@@ -101,10 +100,10 @@ pipeline {
                         set +x
 
                         echo "$DOCKERHUB_TOKEN" | docker login \
-                            -u "$DOCKERHUB_USER" \
+                            --username "$DOCKERHUB_USER" \
                             --password-stdin
 
-                        docker compose push
+                        docker compose push backend frontend
 
                         docker logout
                     '''
@@ -117,7 +116,7 @@ pipeline {
                 echo 'Deploiement automatique de l application'
 
                 sh '''
-                    docker compose pull
+                    docker compose pull backend frontend
                     docker compose up -d --remove-orphans
                     docker compose ps
                 '''
