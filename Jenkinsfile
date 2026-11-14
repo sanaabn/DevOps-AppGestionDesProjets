@@ -5,10 +5,18 @@ pipeline {
     environment {
         JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64'
         PATH = "${JAVA_HOME}/bin:${env.PATH}"
+
+        // Conserver le meme projet Docker Compose
+        COMPOSE_PROJECT_NAME = 'devops-appgestiondesprojets'
     }
 
     options {
         timestamps()
+    }
+
+    // Vérifier automatiquement les changements sur GitHub
+    triggers {
+        pollSCM('H/2 * * * *')
     }
 
     stages {
@@ -29,6 +37,8 @@ pipeline {
                     mvn --version
                     node --version
                     npm --version
+                    docker --version
+                    docker compose version
                 '''
             }
         }
@@ -46,7 +56,7 @@ pipeline {
 
         stage('Frontend - Install & Build') {
             steps {
-                echo 'Installation des dependances et compilation Angular'
+                echo 'Installation et compilation Angular'
 
                 dir('frontend') {
                     sh 'npm ci'
@@ -65,15 +75,65 @@ pipeline {
                 )
             }
         }
+
+        stage('Docker - Build Images') {
+            steps {
+                echo 'Construction des images Docker'
+
+                sh '''
+                    docker compose build
+                '''
+            }
+        }
+
+        stage('Docker Hub - Push Images') {
+            steps {
+                echo 'Publication des images sur Docker Hub'
+
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKERHUB_USER',
+                        passwordVariable: 'DOCKERHUB_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                        set +x
+
+                        echo "$DOCKERHUB_TOKEN" | docker login \
+                            -u "$DOCKERHUB_USER" \
+                            --password-stdin
+
+                        docker compose push
+
+                        docker logout
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy - Docker Compose') {
+            steps {
+                echo 'Deploiement automatique de l application'
+
+                sh '''
+                    docker compose pull
+                    docker compose up -d --remove-orphans
+                    docker compose ps
+                '''
+            }
+        }
     }
 
     post {
         success {
-            echo 'Pipeline execute avec succes !'
+            echo 'CI/CD termine avec succes !'
+            echo 'Images publiees sur Docker Hub.'
+            echo 'Application deployee avec Docker Compose.'
         }
 
         failure {
-            echo 'Echec du pipeline. Consulter les logs.'
+            echo 'Echec du pipeline. Consulter les logs Jenkins.'
         }
 
         always {
