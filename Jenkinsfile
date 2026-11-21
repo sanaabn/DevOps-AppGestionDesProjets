@@ -64,6 +64,30 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                echo 'Analyse de qualite du Backend et du Frontend'
+
+                script {
+                    def scannerHome = tool 'SonarScanner'
+
+                    withSonarQubeEnv('SonarQube') {
+                        sh "${scannerHome}/bin/sonar-scanner"
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                echo 'Verification du Quality Gate SonarQube'
+
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
         stage('Archive Artifacts') {
             steps {
                 echo 'Archivage des fichiers generes'
@@ -127,6 +151,7 @@ pipeline {
     post {
         success {
             echo 'CI/CD termine avec succes !'
+            echo 'Analyse SonarQube validee.'
             echo 'Images publiees sur Docker Hub.'
             echo 'Application deployee avec Docker Compose.'
         }
