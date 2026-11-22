@@ -42,18 +42,29 @@ pipeline {
             }
         }
 
+          
         stage('Backend - Build & Tests') {
             steps {
                 echo 'Compilation et execution des tests Spring Boot'
 
-                dir('backend') {
-                    sh 'chmod +x mvnw'
-                    sh './mvnw clean verify'
+                withCredentials([
+                   string(
+                       credentialsId: 'mysql-db-password',
+                       variable: 'DB_PASSWORD'
+            )
+        ]) {
+                   withEnv(['DB_USERNAME=backend_user']) {
+                       dir('backend') {
+                           sh '''
+                             chmod +x mvnw
+                            ./mvnw clean verify
+                           '''
                 }
             }
         }
-
-        stage('Frontend - Install & Build') {
+    }
+}
+                stage('Frontend - Install & Build') {
             steps {
                 echo 'Installation et compilation Angular'
 
