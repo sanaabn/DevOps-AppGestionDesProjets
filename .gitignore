@@ -1,1 +1,8 @@
 cloudflared.deb
+
+# Secrets et sauvegardes locales
+k8s/mysql-secret.yaml
+backups/
+
+# Binaires locaux
+minikube-linux-amd64
