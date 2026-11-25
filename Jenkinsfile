@@ -163,7 +163,7 @@ pipeline {
                 ]) {
                     sh '''
                         #!/bin/bash
-                        set -euo pipefail
+                        set -eu
                         set +x
 
                         echo "1. Creation ou mise a jour du Secret MySQL"
