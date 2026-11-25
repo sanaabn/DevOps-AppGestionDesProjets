@@ -14,7 +14,7 @@ rules:
     resources: ["deployments", "statefulsets"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: [""]
-    resources: ["services", "persistentvolumeclaims", "secrets", "pods", "events"]
+    resources: ["services", "persistentvolumeclaims", "secrets", "pods", "pods/exec", "events"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
