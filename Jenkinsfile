@@ -185,33 +185,9 @@ pipeline {
                         kubectl rollout status statefulset/mysql \
                             --timeout=300s
 
-                        echo "4. Verification de la base Kubernetes"
+                        echo "4. Migration initiale de la base MySQL"
 
-                        TABLE_COUNT=$(kubectl exec mysql-0 -- sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot -Nse "SHOW TABLES FROM test_db" | wc -l')
-
-                        echo "Nombre de tables dans Kubernetes : $TABLE_COUNT"
-
-                        if [ "$TABLE_COUNT" -eq 0 ]; then
-                            echo "Base vide : verification de la base Docker Compose"
-
-                            if [ "$(docker inspect -f '{{.State.Running}}' appgestion-db)" != "true" ]; then
-                                echo "ERREUR : le conteneur appgestion-db doit etre demarre pour la migration initiale."
-                                exit 1
-                            fi
-
-                            echo "Migration initiale des donnees MySQL"
-
-                            docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" \
-                                appgestion-db \
-                                mysqldump -uroot --single-transaction \
-                                --routines --triggers test_db \
-                                | kubectl exec -i mysql-0 -- sh -c \
-                                'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot test_db'
-
-                            echo "Migration initiale terminee."
-                        else
-                            echo "Base deja initialisee : aucune reimportation."
-                        fi
+                        bash scripts/migrate-mysql.sh
 
                         echo "5. Deploiement du Backend et du Frontend"
 
